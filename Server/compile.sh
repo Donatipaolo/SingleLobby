@@ -1,0 +1,1 @@
+gcc main.c -o server -Wall -Werror -pthread lib/client_listener.c lib/communication_handler.c lib/change_username.c lib/list.c

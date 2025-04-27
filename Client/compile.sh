@@ -1,0 +1,1 @@
+gcc main.c -o client -Wall -Werror lib/client.c

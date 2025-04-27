@@ -1,0 +1,76 @@
+#ifndef CLIENT_H
+#define CLIENT_H
+//includes and defie
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <stdbool.h>
+#define USERNAME_LENGTH 20
+#define MSG_LENGTH 1024
+#define MAX_PCK_LENGTH (MSG_LENGTH + USERNAME_LENGTH)
+#define STDIN_FD fileno(stdin)
+
+
+//Strutture per la definizione del pacchetto
+enum type{
+    MESSAGE,
+    EXIT
+};
+
+enum Color{
+    COLOR_RESET,
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_YELLOW,
+    COLOR_BLUE,
+    COLOR_MAGENTA,
+    COLOR_CYAN,
+    COLOR_WHITE
+};
+
+struct pck{
+    enum type tp;
+    uint8_t bytes[MAX_PCK_LENGTH];
+};
+
+struct msg_pck{
+    char msg[MSG_LENGTH]; 
+    char username[USERNAME_LENGTH];
+};
+
+struct username_pck{
+    char buffer[USERNAME_LENGTH];
+    bool result;
+};
+
+///////////////////////////////////////////////////////////////////////////
+//Funzioni principali
+void communication(int serverfd, char* username);
+void handle_server(int serverfd);
+void change_username(int serverfd);
+
+///////////////////////////////////////////////////////////////////////////
+//Funzioni per l'invio dei pacchetti
+void send_msg(int serverfd,char* buffer,char* username);
+void send_exit(int serverfd);
+
+//////////////////////////////////////////////////////////////////////////
+//Funzioni per la parte grafica
+void print_my_msg(enum Color color, char* buffer);
+void print_other_msg();
+void print_init_communication();
+
+/////////////////////////////////////////////////////////////////////////
+//Altre funzioni
+int safe_fgets(char *buffer,ssize_t dim);
+void clean_input_buffer();
+void strip_new_line(char *buffer);
+const char* get_color_code(enum Color color);
+void print_colored(const char *text,enum Color color);
+void clear_n_lines_up(int n);
+void move_cursor_to_line_start();
+void wait_for_key_press();
+#endif
