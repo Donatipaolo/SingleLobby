@@ -2,6 +2,8 @@
 #include <string.h>
 #include <sys/select.h>
 #include <stdbool.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
 ///////////////////////////////////////////////////////////////////////////
 //Funzioni principali
@@ -14,7 +16,11 @@ void communication(int serverfd,char* username){
 
     //msg
     char buffer[MSG_LENGTH];
+    system("clear");
     print_init_communication();
+
+    //Inizializzo la lista 
+    struct list* head = NULL;
 
     while(true){
         tempfd = fdset;
@@ -32,14 +38,14 @@ void communication(int serverfd,char* username){
         }
 
         if(FD_ISSET(serverfd,&tempfd)){
-            handle_server(serverfd);
+            handle_server(serverfd,&head);
         }
 
     }
 
 }
 
-void handle_server(int serverfd){
+void handle_server(int serverfd,struct list** head){
     //Inizizalizzo il pacchetto
     struct pck pk;
     struct msg_pck *msg = (struct msg_pck*)pk.bytes;
@@ -54,7 +60,7 @@ void handle_server(int serverfd){
     //controllo i tipi
     switch(pk.tp){
         case MESSAGE:
-            print_other_msg(COLOR_BLUE,msg->msg,msg->username);
+            print_other_msg(head,msg->msg,msg->username);
             break;
         default:
             break;
@@ -76,7 +82,7 @@ void change_username(int serverfd){
             close(serverfd);
             exit(EXIT_FAILURE);
         }
-        printf("Messaggio inviato\n");
+  
         //leggo il risultato
         if(read(serverfd,&pck,sizeof(struct username_pck)) <= 0){
             perror("read");
@@ -84,12 +90,10 @@ void change_username(int serverfd){
             exit(EXIT_FAILURE);
         }
     
-        printf("Result %d\n",pck.result);
-
         if(pck.result) break;
 
         printf("Username NON valido\n");
-        void wait_for_key_press();
+        wait_for_key_press();
         system("clear");
     }
 
@@ -135,7 +139,16 @@ void send_exit(int serverfd){
 //////////////////////////////////////////////////////////////////////////
 //Funzioni per la parte grafica
 void print_my_msg(enum Color color, char* buffer){
-    clear_n_lines_up(1);
+
+    //Prendo la dimensione del terminale
+    struct winsize w;
+    
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
+        perror("ioctl");
+        return;
+    }
+
+    clear_n_lines_up(1+ (strlen(buffer)/w.ws_col));
     print_colored("[you]    : ",color);
     print_colored(buffer,color);
     printf("\n");
@@ -143,8 +156,10 @@ void print_my_msg(enum Color color, char* buffer){
     fflush(stdout);
 }
 
-void print_other_msg(enum Color color, char* buffer, char* username){
-    clear_n_lines_up(1);
+void print_other_msg(struct list** head, char* buffer, char* username){
+    enum Color color = get_color(head,username);
+    printf("\033[2K");
+    move_cursor_to_line_start();
     print_colored("[",color);
     print_colored(username,color);
     print_colored("]    : ",color);
@@ -201,6 +216,8 @@ const char* get_color_code(enum Color color) {
         case COLOR_MAGENTA: return "\033[35m";
         case COLOR_CYAN:    return "\033[36m";
         case COLOR_WHITE:   return "\033[37m";
+        case COLOR_BRIGHT_MAGENTA:  return "\033[95m";
+        case COLOR_BRIGHT_RED:      return "\033[91m";
         case COLOR_RESET:   
         default:            return "\033[0m";
     }
@@ -227,4 +244,36 @@ void clear_n_lines_up(int n) {
 void wait_for_key_press() {
     printf("\nPremi INVIO per continuare...");
     while (getchar() != '\n'); // Aspetta fino a che non arriva un invio
+}
+
+/////////////////////////////////////////////////////////////////////////
+//Funzioni per la lista
+struct client* construct_client(struct list** head,char* username){
+    struct client* cli = malloc(sizeof(struct client));
+    memcpy(cli->username,username,USERNAME_LENGTH);
+    cli->color = get_next_color(head);
+    return cli;
+}
+
+enum Color get_next_color(struct list** head){
+    //prendo la dimensione della lista
+    size_t dim = size(head);
+    enum Color result = (enum Color)dim%N_COLOR;
+    return result;
+}
+
+enum Color get_color(struct list** head, char *username){
+    struct list* current = *head;
+
+    while(current != NULL){
+        if(strcmp(((struct client*)current->arg)->username,username) == 0){
+            return ((struct client*)current->arg)->color;
+        }
+        current = current->next;
+    }
+
+    //Se non c'`e lo aggiungo 
+    enqueue(head,construct_client(head,username));
+
+    return get_color(head,username);
 }
