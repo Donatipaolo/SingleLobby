@@ -22,7 +22,7 @@ void* communication_handler(void *args){
         }
 
         //Controllo ogni fd
-        for(size_t i = 3; i < *(arg->max_fd);i++){
+        for(size_t i = 3; i < *(arg->max_fd)+1;i++){
             if(FD_ISSET(i,&tempfd)){
                 handle_client(i,arg->head,arg->fdset);
             }

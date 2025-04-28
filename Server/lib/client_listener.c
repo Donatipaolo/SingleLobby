@@ -124,7 +124,7 @@ size_t client_find(struct list** head,int fd){
     while(current != NULL){
         if(current->arg != NULL && ((struct client*)current->arg)->fd == fd)
             return index;
-        printf("%p\n",current);
+
         index++;
         current = current->next;
     }

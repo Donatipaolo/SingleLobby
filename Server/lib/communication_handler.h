@@ -13,7 +13,8 @@
 #include "list.h"
 #include "client_listener.h"
 #define USERNAME_LENGTH 20
-#define MAX_PCK_LENGTH (1024 + USERNAME_LENGTH)
+#define MSG_LENGTH 1024
+#define MAX_PCK_LENGTH (MSG_LENGTH + USERNAME_LENGTH)
 
 extern pthread_mutex_t lock;
 
@@ -30,7 +31,7 @@ struct pck{
 
 //definzione della struct per ogni tipo di pacchetto
 struct msg_pck{
-    char msg[MAX_PCK_LENGTH]; 
+    char msg[MSG_LENGTH]; 
     char username[USERNAME_LENGTH];
 };
 
